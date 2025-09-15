@@ -21,7 +21,7 @@ class DiscordAuthService(AuthService[DiscordAssessToken]):
                 try:
                     return UserDiscord.model_validate(data)
                 except ValidationError:
-                    raise ValidationError("Not email") from None
+                    raise ValueError("Not email")
             raise Exception("Invalid token")
 
     async def get_token(self, code: str, state: str) -> DiscordAssessToken:

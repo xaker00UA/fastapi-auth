@@ -28,7 +28,7 @@ class AuthService(Generic[V]):
     _scope = {
         "google": "https://www.googleapis.com/auth/userinfo.email "
         + "https://www.googleapis.com/auth/userinfo.profile openid",
-        "github": "",
+        "github": "read:user user:email user:follow",
         "discord": "identify email",
     }
 
@@ -57,7 +57,7 @@ class AuthService(Generic[V]):
                 "response_type": "code",
                 "scope": self._scope[service],
             },
-            "github": {},
+            "github": {"scope": self._scope[service]},
             "discord": {
                 "response_type": "code",
                 "scope": self._scope[service],

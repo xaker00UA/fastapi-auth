@@ -2,8 +2,12 @@ from pydantic import BaseModel
 
 
 class UserType(BaseModel):
-    def get_username(self): ...
-    def get_email(self): ...
+    def get_username(self):
+        raise NotImplementedError
+
+    def get_email(self):
+        raise NotImplementedError
+
     def get_orn_dict(self):
         data = {
             "email": self.get_email(),
@@ -41,8 +45,6 @@ class GoogleAssessToken(TokenType):
 
 class GithubAssessToken(TokenType):
     access_token: str
-    refresh_token: str
-    refresh_token_expires_in: int
     scope: str
     token_type: str
 
@@ -75,6 +77,22 @@ class UserGoogle(UserType):
 
     def get_username(self):
         return self.given_name
+
+
+class UserGithub(UserType):
+    login: str
+    email: str
+    name: str | None
+
+    @property
+    def first_name(self):
+        return self.name
+
+    def get_email(self):
+        return self.email
+
+    def get_username(self):
+        return self.login
 
 
 class UserDiscord(UserType):

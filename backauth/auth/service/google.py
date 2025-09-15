@@ -12,5 +12,4 @@ class GoogleAuthService(AuthService[GoogleAssessToken]):
 
     async def get_user(self, token: GoogleAssessToken):
         user = decode(token.id_token, do_verify=False)
-        UserGoogle.model_validate(user)
-        return user
+        return UserGoogle.model_validate(user)
