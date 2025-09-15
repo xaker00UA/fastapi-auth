@@ -1,4 +1,4 @@
-from typing import Annotated, Type
+from typing import Annotated, Type, AsyncGenerator, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -23,7 +23,7 @@ from fastapi.security import (
 
 
 def users_router(
-    session: AsyncSession,
+    get_session:Any,
     token_model: Type[TokenOrm],
     user_model: Type[UserOrm],
     configuration: Config | None = None,
@@ -32,10 +32,14 @@ def users_router(
         configuration = config
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", refreshUrl="auth/token")
 
-    def create_user_service_dep() -> UserService:
+    def create_user_service_dep(
+        session: AsyncSession = Depends(get_session),
+    ) -> UserService:
         return UserService(session, user_model, token_model, configuration)
 
-    def create_token_service() -> TokenService:
+    def create_token_service(
+        session: AsyncSession = Depends(get_session),
+    ) -> TokenService:
         return TokenService(session, token_model, configuration)
 
     async def is_authenticated(token: str = Depends(oauth2_scheme)) -> bool:

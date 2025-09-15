@@ -1,5 +1,5 @@
 from jwt import JWT
-from backauth.auth.schemas import GoogleAssessToken
+from backauth.auth.schemas import GoogleAssessToken, UserGoogle
 from backauth.auth.service.auth_service import AuthService
 
 jwt_instance = JWT()
@@ -12,4 +12,5 @@ class GoogleAuthService(AuthService[GoogleAssessToken]):
 
     async def get_user(self, token: GoogleAssessToken):
         user = decode(token.id_token, do_verify=False)
+        UserGoogle.model_validate(user)
         return user

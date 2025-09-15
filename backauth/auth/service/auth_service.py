@@ -2,8 +2,7 @@ from typing import Any, TypeVar, Generic, Type
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.util import await_only
-
+from backauth.auth.service import *  # type: ignore
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.schemas import UserType, TokenType
 from backauth.auth.service.token_service import TokenService
@@ -19,15 +18,18 @@ class AuthService(Generic[V]):
     _service_urls = {
         "google": "https://accounts.google.com/o/oauth2/v2/auth",
         "github": "https://github.com/login/oauth/authorize",
+        "discord": "https://discord.com/oauth2/authorize",
     }
     _token_urls = {
         "google": "https://oauth2.googleapis.com/token",
         "github": "https://github.com/login/oauth/access_token",
+        "discord": "https://discord.com/api/oauth2/token",
     }
     _scope = {
         "google": "https://www.googleapis.com/auth/userinfo.email "
         + "https://www.googleapis.com/auth/userinfo.profile openid",
         "github": "",
+        "discord": "identify email",
     }
 
     def __init__(
@@ -38,8 +40,9 @@ class AuthService(Generic[V]):
     ) -> None:
         if configuration:
             self.conf = configuration
-        self.conf = config
-        self.token_service = TokenService(db, token_model, configuration=config)
+        else:
+            self.conf = config
+        self.token_service = TokenService(db, token_model, configuration)
         self.db = db
         self.token_model = token_model
 
@@ -55,6 +58,10 @@ class AuthService(Generic[V]):
                 "scope": self._scope[service],
             },
             "github": {},
+            "discord": {
+                "response_type": "code",
+                "scope": self._scope[service],
+            },
         }
         return data[service]
 
@@ -65,6 +72,9 @@ class AuthService(Generic[V]):
                 "granted_scopes": self._scope[service],
             },
             "github": {},
+            "discord": {
+                "grant_type": "authorization_code",
+            },
         }
         return data[service]
 

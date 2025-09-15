@@ -9,7 +9,6 @@ from jwt import JWT
 from jwt.exceptions import JWTDecodeError as JWTError
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.util import await_only
 
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.repository.tokenrepository import TokenRepository
@@ -35,19 +34,20 @@ class TokenService:
     ):
         if configuration:
             self.conf = configuration
-        self.conf = config
+        else:
+            self.conf = config
         self.token_repository = TokenRepository(db, token_model)
-        self.redis = Redis(self.conf.redis)
+        self.redis = Redis.from_url(self.conf.redis)
 
     async def get_token_by_oauth(self): ...
     async def get_token(self, user: UserOrm) -> Token:
         payload = await self.get_payload(user)
         _id = uuid.uuid4()
-        access_token = await self.create_access_token(payload, _id)
+        access_token = self.create_access_token(payload, _id)
         refresh_token = await self.create_refresh_token(_id, payload)
         return Token(access_token=access_token, refresh_token=refresh_token)
 
-    async def create_access_token(
+    def create_access_token(
         self,
         data: dict,
         jti: uuid.UUID | None = None,
@@ -62,10 +62,10 @@ class TokenService:
             )
         to_encode.update(
             {
-                "iat": datetime.now(UTC).timestamp(),
-                "exp": expire.timestamp(),
+                "iat": int(datetime.now(UTC).timestamp()),
+                "exp": int(expire.timestamp()),
                 "type": self.ACCESS_TOKEN_TYPE,
-                "jti": jti or uuid.uuid4(),
+                "jti": str(jti) or str(uuid.uuid4()),
             }
         )
         encoded_jwt = encode(
@@ -87,7 +87,7 @@ class TokenService:
                 "id": jti,
                 "subject": data["user_id"],
                 "refresh_token": self.generate_random_string(),
-                "exp": expire.timestamp(),
+                "expires_at": expire.timestamp(),
             }
         )
 
@@ -99,9 +99,12 @@ class TokenService:
         token_entity = await self.get_info_from_refresh(refresh_token)
         await self.token_repository.unblock(refresh_token)
         payload = await self.get_payload(user)
-        exp = timedelta(seconds=token_entity.expires_at - datetime.now(UTC).timestamp())
+        exp = timedelta(seconds=token_entity.expires_at) - timedelta(
+            seconds=datetime.now(UTC).timestamp()
+        )
+
         _id = uuid.uuid4()
-        access_token = await self.create_access_token(payload, jti=_id)
+        access_token = self.create_access_token(payload, jti=_id)
         new_refresh_token = await self.create_refresh_token(
             _id, payload, expires_delta=exp
         )
@@ -114,8 +117,11 @@ class TokenService:
             payload = decode(
                 token,
                 self.conf.token.public_key,
+                algorithms={
+                    self.conf.token.algorithm,
+                },
             )
-            return await self.is_token_blacklisted(payload.get("jti"))
+            return await self.is_token_blacklisted(payload.get("jti", ""))
 
         except JWTError:
             return False
@@ -124,6 +130,9 @@ class TokenService:
         payload = decode(
             token,
             self.conf.token.public_key,
+            algorithms={
+                self.conf.token.algorithm,
+            },
         )
         return payload
 
@@ -136,7 +145,7 @@ class TokenService:
     @staticmethod
     async def get_payload(user: UserOrm) -> dict:
         payload = {
-            "user_id": user.id,
+            "user_id": str(user.id),
             "scope": user.scopes,
             "email": user.email,
             "username": user.username,
@@ -179,5 +188,5 @@ class TokenService:
 
     @staticmethod
     def generate_random_string(length: int = 128) -> str:
-        charset = string.ascii_letters + string.digits + string.punctuation
+        charset = string.ascii_letters + string.digits
         return "".join(random.choice(charset) for _ in range(length))

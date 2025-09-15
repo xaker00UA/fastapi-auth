@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -7,9 +7,7 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
-    Table,
     UniqueConstraint,
-    MetaData,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,6 +30,10 @@ class ScopeOrm:
 
 
 class UserOrm:
+    if TYPE_CHECKING:
+        scopes: Mapped[list["ScopeOrm"]] = relationship(
+            secondary="user_scope", lazy="joined"
+        )
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -44,11 +46,6 @@ class UserOrm:
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    scopes: Mapped[list["ScopeOrm"]] = relationship(
-        secondary="user_scope", lazy="joined"
-    )
-
-    # OAuth related fields
     oauth_provider: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     oauth_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 

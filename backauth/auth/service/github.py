@@ -16,5 +16,6 @@ class GithubAuthService(AuthService[GithubAssessToken]):
             )
             if response.status_code == 200:
                 data = response.json()
+                print(data)
                 return data
             raise Exception("Invalid token")

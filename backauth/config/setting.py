@@ -2,8 +2,6 @@ import os
 
 from jwt import jwk_from_pem, AbstractJWKBase
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
 class OAuthBase(BaseSettings):
     client_id: str
     client_secret: str
@@ -36,9 +34,9 @@ class GithubOAuth(OAuthBase):
     client_secret: str = ""
 
 
-class DiscordOAuth(BaseSettings):
+class DiscordOAuth(OAuthBase):
     client_id: str = ""
-
+    client_secret: str = ""
 
 class GoogleOAuth(OAuthBase):
     client_id: str = ""
@@ -68,7 +66,7 @@ class TokenSettings(BaseSettings):
 
 class Config(BaseSettings):
 
-    redirect_uri: str = "http://127.0.0.1:4000/auth/code"
+    redirect_uri: str = "http://127.0.0.1:4000/oauth/code"
 
     google: GoogleOAuth = GoogleOAuth()
     discord: DiscordOAuth = DiscordOAuth()
