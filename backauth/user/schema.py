@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from pydantic import BaseModel, field_validator, field_serializer, model_validator
 
@@ -30,18 +32,18 @@ class UserUpdateSchema(BaseModel):
 
 
 class UserResponseSchema(BaseModel):
-    id: int
+    id: UUID
     username: str
     email: str
-    first_name: str
-    last_name: str
+    first_name: str | None
+    last_name: str | None
     is_active: bool
     is_superuser: bool
     scopes: list[str]
-    oauth_provider: str
-    oauth_id: str
-    created_at: str
-    updated_at: str
+    oauth_provider: str | None
+    oauth_id: str | None
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 

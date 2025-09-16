@@ -4,6 +4,11 @@ from backauth.config.setting import Config
 from backauth.user.model import UserOrm, ScopeOrm, UserScopeOrm
 from backauth.user.router import users_router
 from backauth.user.service import UserService
+from backauth.user.schema import (
+    UserRegisterSchema,
+    UserUpdateSchema,
+    UserResponseSchema,
+)
 
 __all__ = (
     "UserOrm",
@@ -15,4 +20,7 @@ __all__ = (
     "oauth_router",
     "ScopeOrm",
     "Config",
+    "UserRegisterSchema",
+    "UserUpdateSchema",
+    "UserResponseSchema",
 )

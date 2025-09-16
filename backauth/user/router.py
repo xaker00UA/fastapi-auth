@@ -1,7 +1,7 @@
 from typing import Annotated, Type, AsyncGenerator, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.auth.model.token import TokenOrm
@@ -26,6 +26,9 @@ def users_router(
     get_session: Any,
     token_model: Type[TokenOrm],
     user_model: Type[UserOrm],
+    user_read_schema: type[UserResponseSchema],
+    user_update_schema: type[UserUpdateSchema],
+    user_register_schema: type[UserRegisterSchema],
     configuration: Config,
 ):
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", refreshUrl="auth/token")
@@ -51,19 +54,21 @@ def users_router(
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
     service_token_depends = Annotated[TokenService, Depends(create_token_service)]
 
-    @router.get("/me", response_model=UserResponseSchema)
+    @router.get("/me", response_model=user_read_schema)
     async def read_users_me(
         service: service_token_depends, token: HTTPAuthorizationCredentials
     ):
         return service.get_token_info(token.credentials)
 
-    @public_router.post("/", response_model=UserResponseSchema)
-    async def create_user(user: UserRegisterSchema, service: service_user):
+    @public_router.post("/", response_model=user_read_schema)
+    async def create_user(user: user_register_schema, service: service_user):  # type: ignore
         return await service.register(user)
 
     @router.put("/{_id}", status_code=204)
     async def update_user(
-        _id: UUID, form_data: UserUpdateSchema, service: service_user
+        _id: UUID,
+        service: service_user,
+        form_data: user_update_schema,
     ):
         return service.update_user(_id, form_data)
 
@@ -71,7 +76,7 @@ def users_router(
     async def delete_user(_id: UUID, service: service_user):
         return service.delete_user(_id)
 
-    @router.get("/{_id}", response_model=UserResponseSchema)
+    @router.get("/{_id}", response_model=user_read_schema)
     async def get_user(_id: UUID, service: service_user):
         return service.get_user(_id)
 
