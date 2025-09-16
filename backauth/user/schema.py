@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, field_validator, field_serializer
+from pydantic import BaseModel, field_validator, field_serializer, model_validator
 
 if TYPE_CHECKING:
     from backauth.user.model import ScopeOrm
@@ -15,11 +15,11 @@ class UserRegisterSchema(UserLoginSchema):
     username: str
     confirm_password: str
 
-    @field_validator("confirm_password")
-    def password_match(cls, v, values, **kwargs):
-        if v != values["password"]:
+    @model_validator(mode="after")
+    def check_passwords_match(self) -> "UserRegisterSchema":
+        if self.password != self.confirm_password:
             raise ValueError("Passwords do not match")
-        return v
+        return self
 
 
 class UserUpdateSchema(BaseModel):
