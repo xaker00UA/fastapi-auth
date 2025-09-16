@@ -54,7 +54,9 @@ class UserService:
         username = await self.user_repository.get_by_username(user_register.username)
         if user or username:
             raise ValueError("Email or username already exists")
-        return await self.user_repository.create(user_register.model_dump())
+        return await self.user_repository.create(
+            user_register.model_dump(exclude={"confirm_password"})
+        )
 
     async def delete_user(self, user_id: UUID):
         await self.user_repository.delete(user_id)
