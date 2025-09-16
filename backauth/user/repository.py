@@ -10,6 +10,7 @@ from backauth.user.model import UserOrm
 class UserRepository:
     session: AsyncSession
     model: type[UserOrm]
+
     def __init__(self, session: AsyncSession, model: Type[UserOrm]):
         self.session = session
         self.model = model
@@ -41,7 +42,10 @@ class UserRepository:
         await self.session.commit()
 
     async def create(self, data: dict[str, Any]) -> UserOrm:
+        password = data.pop("password")
         user = self.model(**data)
+        if password:
+            user.set_password(password)
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)

@@ -45,9 +45,9 @@ def users_router(
         return await service_token.validate_token(token)
 
     router = APIRouter(
-        prefix="/users", tags=["users"], dependencies=[Depends(is_authenticated)]
+        prefix="", tags=["users"], dependencies=[Depends(is_authenticated)]
     )
-    public_router = APIRouter(prefix="/", tags=["users"])
+    public_router = APIRouter(prefix="/users", tags=["users"])
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
     service_token_depends = Annotated[TokenService, Depends(create_token_service)]
 
@@ -75,5 +75,5 @@ def users_router(
     async def get_user(_id: UUID, service: service_user):
         return service.get_user(_id)
 
-    router.include_router(public_router)
-    return router
+    public_router.include_router(router)
+    return public_router
