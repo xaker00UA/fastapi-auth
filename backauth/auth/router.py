@@ -1,6 +1,7 @@
 from contextlib import _AsyncGeneratorContextManager
 from typing import Annotated, Type, AsyncContextManager, Any
 from fastapi import APIRouter, Depends, Body
+from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Request
@@ -59,8 +60,11 @@ def login_router(
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
 
     @login_router.post("/login")
-    async def login(form_data: UserLoginSchema, service: service_user) -> Token:
-        return await service.login(form_data)
+    async def login(
+        form_data: OAuth2PasswordRequestForm, service: service_user
+    ) -> Token:
+        data = UserLoginSchema(email=form_data.username, password=form_data.password)
+        return await service.login(data)
 
     @login_router.post("/token")
     async def login_for_access_token(
