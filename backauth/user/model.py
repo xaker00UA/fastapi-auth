@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     UniqueConstraint,
+    LargeBinary,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -39,7 +40,7 @@ class UserOrm:
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    hashed_password: Mapped[Optional[bytes]] = mapped_column(LargeBinary, nullable=True)
 
     first_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
@@ -57,9 +58,11 @@ class UserOrm:
     )
 
     def is_valid_password(self, password: str) -> bool:
-        return checkpw(password.encode(), self.hashed_password.encode() or "")
+        if not self.hashed_password:
+            return False
+        return checkpw(password.encode(), self.hashed_password)
 
     def set_password(self, password: str) -> None:
         salt = gensalt()
         hashed = hashpw(password.encode(), salt)
-        self.hashed_password = hashed.decode()
+        self.hashed_password = hashed

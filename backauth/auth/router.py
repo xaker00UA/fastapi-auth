@@ -47,7 +47,7 @@ def login_router(
     get_session: Any,
     token_model: Type[TokenOrm],
     user_model: Type[UserOrm],
-    configuration: Config | None = None,
+    configuration: Config,
 ):
 
     login_router = APIRouter(prefix="/auth", tags=["auth"])
@@ -61,7 +61,8 @@ def login_router(
 
     @login_router.post("/login")
     async def login(
-        form_data: OAuth2PasswordRequestForm, service: service_user
+        service: service_user,
+        form_data: OAuth2PasswordRequestForm = Depends(),
     ) -> Token:
         data = UserLoginSchema(email=form_data.username, password=form_data.password)
         return await service.login(data)

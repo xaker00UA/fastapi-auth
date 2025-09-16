@@ -68,17 +68,17 @@ def users_router(
     async def update_user(
         _id: UUID,
         service: service_user,
-        form_data: user_update_schema,
+        form_data: user_update_schema,  # type: ignore
     ):
-        return service.update_user(_id, form_data)
+        return await service.update_user(_id, form_data)
 
     @router.delete("/{_id}", status_code=204)
     async def delete_user(_id: UUID, service: service_user):
-        return service.delete_user(_id)
+        return await service.delete_user(_id)
 
     @router.get("/{_id}", response_model=user_read_schema)
     async def get_user(_id: UUID, service: service_user):
-        return service.get_user(_id)
+        return await service.get_user(_id)
 
     public_router.include_router(router)
     return public_router
