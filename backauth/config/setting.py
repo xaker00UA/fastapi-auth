@@ -51,7 +51,7 @@ class TokenSettings(BaseSettings):
 
     @property
     def public_key(self) -> AbstractJWKBase:
-        if not os.path.exists(self.private_key_path):
+        if not os.path.exists(self.public_key_path):
             raise FileNotFoundError(f"Private key file not found: {self.private_key_path}")
         with open(self.public_key_path, "rb") as f:
             return  jwk_from_pem(f.read())

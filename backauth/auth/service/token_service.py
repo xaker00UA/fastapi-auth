@@ -82,7 +82,7 @@ class TokenService:
         res = await self.token_repository.create(
             {
                 "id": jti,
-                "subject": data["user_id"],
+                "subject": str(data["user_id"]),
                 "refresh_token": self.generate_random_string(),
                 "expires_at": expire.timestamp(),
             }
@@ -109,16 +109,14 @@ class TokenService:
 
     async def validate_token(self, token: str) -> bool:
         try:
-            if await self.is_token_blacklisted(token):
-                return False
+
             payload = decode(
                 token,
                 self.conf.token.public_key,
-                algorithms={
-                    self.conf.token.algorithm,
-                },
             )
-            return await self.is_token_blacklisted(payload.get("jti", ""))
+            if await self.is_token_blacklisted(payload.get("jti", "")):
+                return False
+            return True
 
         except JWTError:
             return False
@@ -127,9 +125,7 @@ class TokenService:
         payload = decode(
             token,
             self.conf.token.public_key,
-            algorithms={
-                self.conf.token.algorithm,
-            },
+            do_verify=True,
         )
         return payload
 
@@ -143,7 +139,7 @@ class TokenService:
     async def get_payload(user: UserOrm) -> dict:
         payload = {
             "user_id": str(user.id),
-            "scope": user.scopes,
+            "scopes": user.scopes,
             "email": user.email,
             "username": user.username,
             "first_name": user.first_name,

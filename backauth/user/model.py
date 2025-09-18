@@ -51,10 +51,10 @@ class UserOrm:
     oauth_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+        DateTime, default=datetime.now(), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=False
     )
 
     def is_valid_password(self, password: str) -> bool:

@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Type
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -1,6 +1,7 @@
 from typing import Annotated, Type, AsyncGenerator, Any
 from uuid import UUID
-
+from fastapi.exceptions import HTTPException
+from fastapi import status
 from fastapi import APIRouter, Depends, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +13,7 @@ from backauth.user.schema import (
     UserRegisterSchema,
     UserResponseSchema,
     UserUpdateSchema,
+    UserPayloadSchema,
 )
 from backauth.user.service import UserService
 from fastapi.security import (
@@ -43,9 +45,12 @@ def users_router(
     ) -> TokenService:
         return TokenService(session, token_model, configuration)
 
-    async def is_authenticated(token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_authenticated(token: str = Depends(oauth2_scheme)):
         service_token = create_token_service()
-        return await service_token.validate_token(token)
+        if not await service_token.validate_token(token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
 
     router = APIRouter(
         prefix="", tags=["users"], dependencies=[Depends(is_authenticated)]
@@ -54,11 +59,11 @@ def users_router(
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
     service_token_depends = Annotated[TokenService, Depends(create_token_service)]
 
-    @router.get("/me", response_model=user_read_schema)
+    @router.get("/me", response_model=UserPayloadSchema)
     async def read_users_me(
-        service: service_token_depends, token: HTTPAuthorizationCredentials
+        service: service_token_depends, token: str = Depends(oauth2_scheme)
     ):
-        return service.get_token_info(token.credentials)
+        return service.get_token_info(token)
 
     @public_router.post("/", response_model=user_read_schema)
     async def create_user(user: user_register_schema, service: service_user):  # type: ignore
