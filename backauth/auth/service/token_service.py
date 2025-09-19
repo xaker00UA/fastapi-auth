@@ -131,7 +131,7 @@ class TokenService:
 
     async def get_info_from_refresh(self, refresh_token: str) -> TokenOrm:
         token_entity = await self.token_repository.get_by_refresh_token(refresh_token)
-        if not token_entity or token_entity.expires_at < datetime.now(UTC).timestamp():
+        if not token_entity or token_entity.expires_at > datetime.now(UTC).timestamp():
             raise ValueError("Invalid refresh token")
         return token_entity
 

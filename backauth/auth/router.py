@@ -1,6 +1,6 @@
 from contextlib import _AsyncGeneratorContextManager
 from typing import Annotated, Type, AsyncContextManager, Any
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends, Body, Form
 from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +69,8 @@ def login_router(
 
     @login_router.post("/token")
     async def login_for_access_token(
-        service: service_user, refresh_token: str = Body(...)
+        service: service_user,refresh_token: str = Form(...)
+
     ) -> Token:
         return await service.get_token_by_refresh(refresh_token)
 
