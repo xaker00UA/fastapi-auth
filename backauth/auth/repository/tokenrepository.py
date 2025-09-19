@@ -39,16 +39,15 @@ class TokenRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def delete_by_sub(self, sub: UUID) -> None:
+        stmt = delete(self.model).where(self.model.subject == sub)
+        await self.session.execute(stmt)
+        await self.session.commit()
+
     async def get_by_refresh_token(self, refresh_token: str) -> TokenOrm | None:
         stmt = select(self.model).where(self.model.refresh_token == refresh_token)
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
-
-    async def unblock(self, refresh_token: str):
-        token = await self.get_by_refresh_token(refresh_token)
-        if token:
-            token.is_blocked_access = False
-            await self.session.commit()
 
     async def block(self, subject: UUID) -> list[TokenOrm]:
         tokens = await self.get_by_sub(subject)

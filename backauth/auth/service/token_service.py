@@ -94,12 +94,11 @@ class TokenService:
         self, refresh_token: str, user: UserOrm
     ) -> Token:
         token_entity = await self.get_info_from_refresh(refresh_token)
-        await self.token_repository.unblock(refresh_token)
         payload = await self.get_payload(user)
         exp = timedelta(seconds=token_entity.expires_at) - timedelta(
             seconds=datetime.now(UTC).timestamp()
         )
-
+        await self.token_repository.delete(token_entity.id)
         _id = uuid.uuid4()
         access_token = self.create_access_token(payload, jti=_id)
         new_refresh_token = await self.create_refresh_token(
@@ -131,7 +130,7 @@ class TokenService:
 
     async def get_info_from_refresh(self, refresh_token: str) -> TokenOrm:
         token_entity = await self.token_repository.get_by_refresh_token(refresh_token)
-        if not token_entity or token_entity.expires_at > datetime.now(UTC).timestamp():
+        if not token_entity or token_entity.expires_at < datetime.now(UTC).timestamp():
             raise ValueError("Invalid refresh token")
         return token_entity
 
