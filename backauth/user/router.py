@@ -53,6 +53,12 @@ def users_router(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
+
+    async def is_owner(
+        _id: UUID = Path(),
+        token: str = Depends(oauth2_scheme),
+    ):
+        service_token = create_token_service()
         user = service_token.get_token_info(token)
         if user.get("user_id") != str(_id):
             raise HTTPException(
@@ -77,7 +83,7 @@ def users_router(
     async def create_user(user: user_register_schema, service: service_user):  # type: ignore
         return await service.register(user)
 
-    @router.put("/{_id}", status_code=204)
+    @router.put("/{_id}", status_code=204, dependencies=[Depends(is_owner)])
     async def update_user(
         _id: UUID,
         service: service_user,
@@ -85,11 +91,13 @@ def users_router(
     ):
         return await service.update_user(_id, form_data)
 
-    @router.delete("/{_id}", status_code=204)
+    @router.delete("/{_id}", status_code=204, dependencies=[Depends(is_owner)])
     async def delete_user(_id: UUID, service: service_user):
         return await service.delete_user(_id)
 
-    @router.get("/{_id}", response_model=user_read_schema)
+    @router.get(
+        "/{_id}", response_model=user_read_schema, dependencies=[Depends(is_owner)]
+    )
     async def get_user(_id: UUID, service: service_user):
         return await service.get_user(_id)
 
