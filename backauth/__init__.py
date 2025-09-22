@@ -1,5 +1,6 @@
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.router import login_router, oauth_router
+from backauth.auth.service.token_service import TokenService
 from backauth.config.setting import Config
 from backauth.user.model import UserOrm, ScopeOrm, UserScopeOrm
 from backauth.user.router import users_router
@@ -23,4 +24,5 @@ __all__ = (
     "UserRegisterSchema",
     "UserUpdateSchema",
     "UserResponseSchema",
+    "TokenService",
 )

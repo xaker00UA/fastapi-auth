@@ -144,6 +144,9 @@ class TokenService:
             "first_name": user.first_name,
             "last_name": user.last_name,
         }
+        if hasattr(user, "extend_payload"):
+            payload.update(user.extend_payload())
+
         return payload
 
     async def blacklist_access_token(self, subject: uuid.UUID):

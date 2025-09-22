@@ -45,11 +45,21 @@ def users_router(
     ) -> TokenService:
         return TokenService(session, token_model, configuration)
 
-    async def is_authenticated(token: str = Depends(oauth2_scheme)):
+    async def is_authenticated(
+        _id: UUID,
+        token: str = Depends(oauth2_scheme),
+    ):
         service_token = create_token_service()
+
         if not await service_token.validate_token(token):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
+        user = service_token.get_token_info(token)
+        if user.get("user_id") != str(_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You don't have permission to access this user's data",
             )
 
     router = APIRouter(
