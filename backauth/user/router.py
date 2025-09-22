@@ -18,10 +18,8 @@ from backauth.user.schema import (
 from backauth.user.service import UserService
 from fastapi.security import (
     OAuth2PasswordBearer,
-    OAuth2PasswordRequestForm,
-    HTTPBearer,
-    HTTPAuthorizationCredentials,
 )
+from fastapi import Path
 
 
 def users_router(
@@ -46,7 +44,7 @@ def users_router(
         return TokenService(session, token_model, configuration)
 
     async def is_authenticated(
-        _id: UUID,
+        _id: UUID = Path(),
         token: str = Depends(oauth2_scheme),
     ):
         service_token = create_token_service()
