@@ -17,9 +17,9 @@ def oauth_router(
     get_session: Any,
     token_model: Type[TokenOrm],
     user_model: Type[UserOrm],
-    configuration: Config | None = None,
+    configuration: Config,
 ):
-    oauth_router = APIRouter(prefix="/oauth", tags=["oauth"])
+    router = APIRouter(prefix="/oauth", tags=["oauth"])
 
     def create_user_service_dep(
         session: AsyncSession = Depends(get_session),
@@ -28,19 +28,19 @@ def oauth_router(
 
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
 
-    @oauth_router.get("/code")
+    @router.get("/code")
     async def redirect_code(code: str, state: str, service: service_user) -> Token:
         return await service.create_user_from_oauth(code, state)
 
     for field, value in configuration.__dict__.items():
         if isinstance(value, OAuthBase) and value.enabled:
 
-            @oauth_router.get(f"/{field}", response_model=str)
+            @router.get(f"/{field}", response_model=str)
             async def login(service: service_user, request: Request) -> str:
                 endpoint_name = request.url.path.split("/")[-1]
                 return service.get_auth_url(endpoint_name)
 
-    return oauth_router
+    return router
 
 
 def login_router(
@@ -50,7 +50,7 @@ def login_router(
     configuration: Config,
 ):
 
-    login_router = APIRouter(prefix="/auth", tags=["auth"])
+    router = APIRouter(prefix="/auth", tags=["auth"])
 
     def create_user_service_dep(
         session: AsyncSession = Depends(get_session),
@@ -59,7 +59,7 @@ def login_router(
 
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
 
-    @login_router.post("/login")
+    @router.post("/login")
     async def login(
         service: service_user,
         form_data: OAuth2PasswordRequestForm = Depends(),
@@ -67,11 +67,10 @@ def login_router(
         data = UserLoginSchema(email=form_data.username, password=form_data.password)
         return await service.login(data)
 
-    @login_router.post("/token")
+    @router.post("/token")
     async def login_for_access_token(
-        service: service_user,refresh_token: str = Form(...)
-
+        service: service_user, refresh_token: str = Form(...)
     ) -> Token:
         return await service.get_token_by_refresh(refresh_token)
 
-    return login_router
+    return router

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Sequence
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -32,7 +32,7 @@ class ScopeOrm:
 
 class UserOrm:
     if TYPE_CHECKING:
-        scopes: Mapped[list["ScopeOrm"]] = relationship(
+        scopes: Mapped[Sequence["ScopeOrm"]] = relationship(
             secondary="user_scope", lazy="joined"
         )
     __tablename__ = "users"

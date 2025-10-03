@@ -59,6 +59,7 @@ class UserService:
         )
 
     async def delete_user(self, user_id: UUID):
+        await self.token_service.blacklist_refresh_token(user_id)
         await self.user_repository.delete(user_id)
 
     async def get_user(self, user_id: UUID) -> UserOrm:
