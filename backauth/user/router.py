@@ -31,23 +31,23 @@ def users_router(
     dependency_overrides: dict[str, Callable],
     configuration: Config,
 ) -> APIRouter:
-    """Creates and configures the users router with authentication and CRUD operations.
+    """
+    Creates and configures the users router with authentication and CRUD operations.
 
     Args:
-        get_session: Session factory function for database access
-        token_model: Token ORM model class
-        user_model: User ORM model class
-        user_read_schema: Schema for user response data
-        user_update_schema: Schema for user update data
-        user_register_schema: Schema for user registration data
-        dependency_overrides: Dictionary of dependency overrides
-        configuration: Application configuration
+        get_session: Session factory function for database access.
+        token_model: Token ORM model class.
+        user_model: User ORM model class.
+        user_read_schema: Schema for user response data.
+        user_update_schema: Schema for user update data.
+        user_register_schema: Schema for user registration data.
+        dependency_overrides: Dictionary of dependency overrides. Should contain:
+            - is_authenticated: Dependency function for authentication path /@me.
+            - update_delete_get: Dependency function for CRUD operations.
+        configuration: Application configuration.
 
-        dependency_overrides: {"is_authenticated":func,"update_delete_get":func}
-        is_authenticated: Dependency function for authentication path /@me
-        update_delete_get: Dependency function for CRUD operations
     Returns:
-        Configured FastAPI router for user endpoints
+        Configured FastAPI router for user endpoints.
     """
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", refreshUrl="auth/token")

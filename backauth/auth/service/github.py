@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from httpx import AsyncClient
 from pydantic import ValidationError
@@ -38,7 +39,7 @@ class GithubAuthService(AuthService[GithubAssessToken]):
                 headers={"Authorization": f"Bearer {token.access_token}"},
             )
             if response.status_code == 200:
-                data = response.json()
+                data: list[dict[str, Any]] = response.json()
                 return next(filter(lambda x: x.get("primary") is True, data), {}).get(
                     "email", ""
                 )
