@@ -34,12 +34,19 @@ class UserService:
         ).get_service_by_state(state)
         token = await auth_service.get_token(code, state)
         user_data = await auth_service.get_user(token)
-        user = await self.user_repository.get_by_email(user_data.get_email())
-        username = await self.user_repository.get_by_username(user_data.get_username())
-        if user or username:
+        user = await self.user_repository.get_by_email_and_username_and_provider(
+            user_data.get_email(), user_data.get_username(), auth_service.service_name
+        )
+        if user:
             raise ValueError("Email or username already exists")
-        entity = await self.user_repository.create(user_data.get_orn_dict())
-        return await self.token_service.get_token(entity)
+        user_or_username = await self.user_repository.get_by_username(
+            user_data.get_username()
+        ) or await self.user_repository.get_by_email(user_data.get_email())
+        if not user_or_username:
+            data = user_data.get_orn_dict()
+            data["oauth_provider"] = auth_service.service_name
+            user_or_username = await self.user_repository.create(data)
+        return await self.token_service.get_token(user_or_username)
 
     async def login(self, user_login: UserLoginSchema) -> Token:
         user = await self.user_repository.get_by_email(user_login.email)
