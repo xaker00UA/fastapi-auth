@@ -96,11 +96,11 @@ class AuthService(Generic[V]):
                 return token
             raise Exception("Invalid code")
 
-    def get_auth_url(self, service: str) -> str:
+    def get_auth_url(self, service: str, redirect_url: str) -> str:
         query_params = {
             "client_id": self.conf[service].id,
             "redirect_uri": self.conf.redirect_uri,
-            "state": self.generate_state(service),
+            "state": self.generate_state(service, redirect_url),
             **self.build_params_auth(service),
         }
         return (
@@ -109,8 +109,13 @@ class AuthService(Generic[V]):
             + "&".join([f"{key}={value}" for key, value in query_params.items()])
         )
 
-    def generate_state(self, service: str):
-        return self.token_service.create_access_token({"service": service})
+    def generate_state(self, service: str, redirect_uri: str):
+        return self.token_service.create_access_token(
+            {
+                "service": service,
+                "redirect_url": redirect_uri,
+            }
+        )
 
     async def valid_state(self, state: str) -> str:
         await self.token_service.validate_token(state)

@@ -2,6 +2,7 @@ from typing import Type
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from watchfiles import awatch
 
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.schemas import Token
@@ -28,7 +29,7 @@ class UserService:
         self.db = db
         self.token_model = token_model
 
-    async def create_user_from_oauth(self, code: str, state: str) -> Token:
+    async def create_user_from_oauth(self, code: str, state: str) -> tuple[str, Token]:
         auth_service = await AuthService(
             self.db, self.token_model, self.conf
         ).get_service_by_state(state)
@@ -46,7 +47,9 @@ class UserService:
             data = user_data.get_orn_dict()
             data["oauth_provider"] = auth_service.service_name
             user_or_username = await self.user_repository.create(data)
-        return await self.token_service.get_token(user_or_username)
+        return self.token_service.get_token_info(state).get(
+            "redirect_url", ""
+        ), await self.token_service.get_token(user_or_username)
 
     async def login(self, user_login: UserLoginSchema) -> Token:
         user = await self.user_repository.get_by_email(user_login.email)
@@ -95,11 +98,11 @@ class UserService:
             refresh_token, user
         )
 
-    def get_auth_url(self, service: str) -> str:
+    def get_auth_url(self, service: str, redirect_url: str) -> str:
         auth_service = AuthService(self.db, self.token_model, self.conf).get_service(
             service
         )
-        return auth_service.get_auth_url(service)
+        return auth_service.get_auth_url(service, redirect_url)
 
     def get_token_service(self):
         return self.token_service
