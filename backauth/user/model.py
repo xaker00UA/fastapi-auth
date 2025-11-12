@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional, TYPE_CHECKING, Sequence
 from uuid import UUID, uuid4
 
@@ -51,10 +51,13 @@ class UserOrm:
     oauth_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(), nullable=False
+        DateTime, default=datetime.now(tz=UTC), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=False
+        DateTime,
+        default=datetime.now(tz=UTC),
+        onupdate=datetime.now(tz=UTC),
+        nullable=False,
     )
 
     def is_valid_password(self, password: str) -> bool:
