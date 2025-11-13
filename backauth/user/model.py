@@ -51,10 +51,10 @@ class UserOrm:
     oauth_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(tz=UTC), nullable=False
+        DateTime(timezone=True), default=datetime.now(tz=UTC), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=datetime.now(tz=UTC),
         onupdate=datetime.now(tz=UTC),
         nullable=False,
