@@ -64,3 +64,8 @@ class TokenRepository:
             token.is_blocked_access = True
             await self.session.commit()
         return tokens
+
+    async def get_all_blocked(self):
+        stmt = select(self.model).where(self.model.is_blocked_access == True)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()

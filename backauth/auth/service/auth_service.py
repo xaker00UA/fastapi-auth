@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, Generic, Type
+from typing import Any, TypeVar, Generic, Type, NoReturn
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +7,7 @@ from backauth.auth.model.token import TokenOrm
 from backauth.auth.schemas import UserType, TokenType
 from backauth.auth.service.token_service import TokenService
 from backauth.config.setting import config, Config
+from backauth.config.logger import logger
 
 V = TypeVar("V", bound=TokenType)
 
@@ -36,15 +37,13 @@ class AuthService(Generic[V]):
         self,
         db: AsyncSession,
         token_model: Type[TokenOrm],
-        configuration: Config | None = None,
+        configuration: Config,
     ) -> None:
-        if configuration:
-            self.conf = configuration
-        else:
-            self.conf = config
+        self.conf = configuration
         self.token_service = TokenService(db, token_model, configuration)
         self.db = db
         self.token_model = token_model
+        self._client = AsyncClient()
 
     async def get_user(self, token) -> UserType:
         raise NotImplementedError
@@ -127,3 +126,10 @@ class AuthService(Generic[V]):
 
     async def get_service_by_state(self, state: str):
         return self.get_service(await self.valid_state(state))
+
+    def exception_handler(self, msg, response: dict[Any, Any]) -> NoReturn:
+        logger.error(msg, extra={"service": self.service_name, "response": response})
+        raise Exception(msg)
+
+    async def close(self):
+        await self._client.aclose()

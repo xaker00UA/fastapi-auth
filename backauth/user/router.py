@@ -23,13 +23,11 @@ from fastapi.security import (
 
 
 def users_router(
-    get_session:Any,
+    get_session: Any,
     token_model: Type[TokenOrm],
     user_model: Type[UserOrm],
-    configuration: Config | None = None,
+    configuration: Config,
 ):
-    if configuration is None:
-        configuration = config
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", refreshUrl="auth/token")
 
     def create_user_service_dep(
@@ -53,7 +51,7 @@ def users_router(
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
     service_token_depends = Annotated[TokenService, Depends(create_token_service)]
 
-    @router.get("/me", response_model=UserResponseSchema)
+    @router.get("/@me", response_model=UserResponseSchema)
     async def read_users_me(
         service: service_token_depends, token: HTTPAuthorizationCredentials
     ):

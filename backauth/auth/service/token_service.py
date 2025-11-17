@@ -8,6 +8,9 @@ from typing import Optional, Type
 from jwt import JWT
 from jwt.exceptions import JWTDecodeError as JWTError
 
+from backauth.config.logger import logger
+from backauth.error.exception import InvalidToken
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.auth.model.token import TokenOrm
@@ -30,14 +33,11 @@ class TokenService:
         self,
         db: AsyncSession,
         token_model: Type[TokenOrm],
-        configuration: Config | None = None,
+        configuration: Config,
     ):
-        if configuration:
-            self.conf = configuration
-        else:
-            self.conf = config
+        self.conf = configuration
         self.token_repository = TokenRepository(db, token_model)
-        self.redis = Redis.from_url(self.conf.redis)
+        self.redis = Redis.from_pool(self.conf.redis_connection_pool)
 
     async def get_token_by_oauth(self): ...
     async def get_token(self, user: UserOrm) -> Token:
@@ -90,7 +90,7 @@ class TokenService:
                 "expires_at": expire.timestamp(),
             }
         )
-
+        logger.info(f"Refresh token created for user {data['user_id']}")
         return res.refresh_token
 
     async def create_access_token_by_refresh(
@@ -139,7 +139,7 @@ class TokenService:
     async def get_info_from_refresh(self, refresh_token: str) -> TokenOrm:
         token_entity = await self.token_repository.get_by_refresh_token(refresh_token)
         if not token_entity or token_entity.expires_at < datetime.now(UTC).timestamp():
-            raise ValueError("Invalid refresh token")
+            raise InvalidToken("Invalid refresh token")
         return token_entity
 
     @staticmethod
@@ -166,6 +166,7 @@ class TokenService:
                 )
             )
         await asyncio.gather(*task)
+        logger.info(f"Access token blacklisted for user {subject}")
 
     async def blacklist_refresh_token(self, subject: uuid.UUID):
         tokens = await self.token_repository.full_block(subject)
@@ -179,12 +180,26 @@ class TokenService:
                 )
             )
         await asyncio.gather(*task)
+        logger.info(f"Refresh token blacklisted for user {subject}")
 
     async def is_token_blacklisted(self, _id: str) -> bool:  # type: ignore
         res = await self.redis.get(f"token:{_id}")
         if res:
             return True
         return False
+
+    async def load_blacklist_tokens(self):
+        tokens = await self.token_repository.get_all_blocked()
+        now = datetime.now(UTC).timestamp()
+        tasks = []
+
+        for token in tokens:
+            ttl = int(token.expires_at - now)
+            if ttl > 0:
+                tasks.append(self.redis.set(f"token:{token.id}", "block", ex=ttl))
+
+        await asyncio.gather(*tasks)
+        logger.info(f"Loaded {len(tasks)} blocked tokens into Redis")
 
     @staticmethod
     def generate_random_string(length: int = 128) -> str:
