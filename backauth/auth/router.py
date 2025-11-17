@@ -1,6 +1,7 @@
 from typing import Annotated, Type, Any
 from fastapi import APIRouter, Depends, Form
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import status
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Request
@@ -29,9 +30,18 @@ def oauth_router(
 
     service_user = Annotated[UserService, Depends(create_user_service_dep)]
 
-    @router.get("/code")
+    @router.get(
+        "/code",
+        responses={
+            status.HTTP_409_CONFLICT: {
+                "description": "User already exists",
+            }
+        },
+    )
     async def redirect_code(
-        code: str, state: str, service: service_user
+        code: str,
+        state: str,
+        service: service_user,
     ) -> RedirectResponse:
         front, res = await service.create_user_from_oauth(code, state)
         response = RedirectResponse(

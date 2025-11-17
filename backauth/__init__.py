@@ -10,6 +10,8 @@ from backauth.user.schema import (
     UserUpdateSchema,
     UserResponseSchema,
 )
+from backauth.auth.service.auth_service import AuthService
+from backauth.error.exception import AuthBackendException
 
 __all__ = (
     "UserOrm",
@@ -25,4 +27,6 @@ __all__ = (
     "UserUpdateSchema",
     "UserResponseSchema",
     "TokenService",
+    "AuthService",
+    "AuthBackendException",
 )

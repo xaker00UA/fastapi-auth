@@ -1,4 +1,3 @@
-
 from pydantic import ValidationError
 
 from backauth.auth.schemas import GithubAssessToken, UserGithub
@@ -25,7 +24,7 @@ class GithubAuthService(AuthService[GithubAssessToken]):
                     data.update({"email": emails})
                     return UserGithub.model_validate(data)
                 except ValidationError:
-                    raise GithubException("Not email")
+                    raise GithubException("Not email in github user")
         self.exception_handler("Invalid token", response.json())
 
     async def get_email(self, token: GithubAssessToken) -> str:

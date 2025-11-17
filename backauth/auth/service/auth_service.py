@@ -12,6 +12,23 @@ from backauth.config.logger import logger
 V = TypeVar("V", bound=TokenType)
 
 
+_client: AsyncClient | None = None
+
+
+def get_http_client() -> AsyncClient:
+    global _client
+    if _client is None:
+        _client = AsyncClient()
+    return _client
+
+
+async def close_http_client():
+    global _client
+    if _client is not None:
+        await _client.aclose()
+        _client = None
+
+
 class AuthService(Generic[V]):
     service_name: str = NotImplementedError  # type: ignore
     model: Type[V] = NotImplementedError  # type: ignore
@@ -43,7 +60,7 @@ class AuthService(Generic[V]):
         self.token_service = TokenService(db, token_model, configuration)
         self.db = db
         self.token_model = token_model
-        self._client = AsyncClient()
+        self._client = get_http_client()
 
     async def get_user(self, token) -> UserType:
         raise NotImplementedError
@@ -136,5 +153,6 @@ class AuthService(Generic[V]):
         logger.error(msg, extra={"service": self.service_name, "response": response})
         raise Exception(msg)
 
+    @staticmethod
     async def close(self):
-        await self._client.aclose()
+        await close_http_client()

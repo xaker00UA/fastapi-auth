@@ -103,7 +103,15 @@ def users_router(
         """
         return service.get_token_info(token)
 
-    @public_router.post("/", response_model=user_read_schema)
+    @public_router.post(
+        "/",
+        response_model=user_read_schema,
+        responses={
+            status.HTTP_409_CONFLICT: {
+                "description": "User already exists",
+            }
+        },
+    )
     async def create_user(user: user_register_schema, service: service_user):  # type: ignore
         """Registers a new user.
 
