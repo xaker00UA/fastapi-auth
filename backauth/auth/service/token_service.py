@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.repository.tokenrepository import TokenRepository
 from backauth.auth.schemas import Token
-from backauth.config.setting import Config, config
+from backauth.config.setting import Config
 from backauth.user.model import UserOrm
 from redis.asyncio import Redis
 
@@ -30,12 +30,9 @@ class TokenService:
         self,
         db: AsyncSession,
         token_model: Type[TokenOrm],
-        configuration: Config | None = None,
+        configuration: Config,
     ):
-        if configuration:
-            self.conf = configuration
-        else:
-            self.conf = config
+        self.conf = configuration
         self.token_repository = TokenRepository(db, token_model)
         self.redis = Redis.from_url(self.conf.redis)
 
@@ -85,7 +82,7 @@ class TokenService:
         res = await self.token_repository.create(
             {
                 "id": jti,
-                "subject": data["user_id"],
+                "subject": str(data["user_id"]),
                 "refresh_token": self.generate_random_string(),
                 "expires_at": expire.timestamp(),
             }
@@ -97,12 +94,11 @@ class TokenService:
         self, refresh_token: str, user: UserOrm
     ) -> Token:
         token_entity = await self.get_info_from_refresh(refresh_token)
-        await self.token_repository.unblock(refresh_token)
         payload = await self.get_payload(user)
         exp = timedelta(seconds=token_entity.expires_at) - timedelta(
             seconds=datetime.now(UTC).timestamp()
         )
-
+        await self.token_repository.delete(token_entity.id)
         _id = uuid.uuid4()
         access_token = self.create_access_token(payload, jti=_id)
         new_refresh_token = await self.create_refresh_token(
@@ -112,16 +108,14 @@ class TokenService:
 
     async def validate_token(self, token: str) -> bool:
         try:
-            if await self.is_token_blacklisted(token):
-                return False
+
             payload = decode(
                 token,
                 self.conf.token.public_key,
-                algorithms={
-                    self.conf.token.algorithm,
-                },
             )
-            return await self.is_token_blacklisted(payload.get("jti", ""))
+            if await self.is_token_blacklisted(payload.get("jti", "")):
+                return False
+            return True
 
         except JWTError:
             return False
@@ -130,9 +124,7 @@ class TokenService:
         payload = decode(
             token,
             self.conf.token.public_key,
-            algorithms={
-                self.conf.token.algorithm,
-            },
+            do_verify=True,
         )
         return payload
 
@@ -146,12 +138,15 @@ class TokenService:
     async def get_payload(user: UserOrm) -> dict:
         payload = {
             "user_id": str(user.id),
-            "scope": user.scopes,
+            "scopes": user.scopes,
             "email": user.email,
             "username": user.username,
             "first_name": user.first_name,
             "last_name": user.last_name,
         }
+        if hasattr(user, "extend_payload"):
+            payload.update(user.extend_payload())
+
         return payload
 
     async def blacklist_access_token(self, subject: uuid.UUID):

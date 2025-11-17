@@ -1,7 +1,7 @@
 from typing import Any, Type
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, Executable
+from sqlalchemy import select, update, delete, Executable, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.user.model import UserOrm
@@ -10,6 +10,7 @@ from backauth.user.model import UserOrm
 class UserRepository:
     session: AsyncSession
     model: type[UserOrm]
+
     def __init__(self, session: AsyncSession, model: Type[UserOrm]):
         self.session = session
         self.model = model
@@ -24,6 +25,16 @@ class UserRepository:
 
     async def get_by_email(self, email: str) -> UserOrm | None:
         stmt = select(self.model).where(self.model.email == email)
+        return await self._get_user(stmt)
+
+    async def get_by_email_and_username_and_provider(
+        self, email: str, username: str, provider: str
+    ):
+        stmt = select(self.model).where(
+            or_(self.model.email == email, self.model.username == username),
+            self.model.oauth_provider != provider,
+        )
+
         return await self._get_user(stmt)
 
     async def get_by_username(self, username: str) -> UserOrm | None:
@@ -41,7 +52,12 @@ class UserRepository:
         await self.session.commit()
 
     async def create(self, data: dict[str, Any]) -> UserOrm:
+        password = None
+        if data.get("password"):
+            password = data.pop("password")
         user = self.model(**data)
+        if password:
+            user.set_password(password)
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
