@@ -1,6 +1,4 @@
-import json
 
-from httpx import AsyncClient
 from pydantic import ValidationError
 
 from backauth.auth.schemas import GithubAssessToken, UserGithub

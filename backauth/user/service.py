@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Type
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,7 @@ from backauth.auth.schemas import Token
 from backauth.auth.service.auth_service import AuthService
 from backauth.auth.service.token_service import TokenService
 from backauth.config.logger import logger
-from backauth.config.setting import Config, config
+from backauth.config.setting import Config
 from backauth.user.model import UserOrm
 from backauth.user.repository import UserRepository
 from backauth.user.schema import UserLoginSchema, UserRegisterSchema, UserUpdateSchema
@@ -27,27 +27,36 @@ class UserService:
         db: AsyncSession,
         user_model: Type[UserOrm],
         token_model: Type[TokenOrm],
-        configuration: Config | None = None,
+        configuration: Config,
     ) -> None:
-        self.conf = configuration or config
+        self.conf = configuration
         self.user_repository = UserRepository(db, user_model)
         self.token_service = TokenService(db, token_model, configuration)
         self.db = db
         self.token_model = token_model
 
-    async def create_user_from_oauth(self, code: str, state: str) -> Token:
+    async def create_user_from_oauth(self, code: str, state: str) -> tuple[str, Token]:
         auth_service = await AuthService(
             self.db, self.token_model, self.conf
         ).get_service_by_state(state)
         token = await auth_service.get_token(code, state)
         user_data = await auth_service.get_user(token)
-        user = await self.user_repository.get_by_email(user_data.get_email())
-        username = await self.user_repository.get_by_username(user_data.get_username())
-        if user or username:
+        user = await self.user_repository.get_by_email_and_username_and_provider(
+            user_data.get_email(), user_data.get_username(), auth_service.service_name
+        )
+        if user:
             raise EmailOrUsernameExist()
-        entity = await self.user_repository.create(user_data.get_orn_dict())
-        logger.info(f"User by oauth created: {entity}")
-        return await self.token_service.get_token(entity)
+        user_or_username = await self.user_repository.get_by_username(
+            user_data.get_username()
+        ) or await self.user_repository.get_by_email(user_data.get_email())
+        if not user_or_username:
+            data = user_data.get_orn_dict()
+            data["oauth_provider"] = auth_service.service_name
+            user_or_username = await self.user_repository.create(data)
+            logger.info(f"User by oauth created: {entity}")
+        return self.token_service.get_token_info(state).get(
+            "redirect_url", ""
+        ), await self.token_service.get_token(user_or_username)
 
     async def login(self, user_login: UserLoginSchema) -> Token:
         user = await self.user_repository.get_by_email(user_login.email)
@@ -67,6 +76,7 @@ class UserService:
         return user
 
     async def delete_user(self, user_id: UUID):
+        await self.token_service.blacklist_refresh_token(user_id)
         await self.user_repository.delete(user_id)
         logger.info(f"User deleted: {user_id}")
 
@@ -97,11 +107,11 @@ class UserService:
             refresh_token, user
         )
 
-    def get_auth_url(self, service: str) -> str:
+    def get_auth_url(self, service: str, redirect_url: str) -> str:
         auth_service = AuthService(self.db, self.token_model, self.conf).get_service(
             service
         )
-        return auth_service.get_auth_url(service)
+        return auth_service.get_auth_url(service, redirect_url)
 
     def get_token_service(self):
         return self.token_service

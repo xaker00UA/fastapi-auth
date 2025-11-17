@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from datetime import datetime, UTC
+from typing import TYPE_CHECKING, Sequence
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     UniqueConstraint,
+    LargeBinary,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,12 +27,12 @@ class ScopeOrm:
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    description: Mapped[str|None] = mapped_column(String(255), nullable=True)
 
 
 class UserOrm:
     if TYPE_CHECKING:
-        scopes: Mapped[list["ScopeOrm"]] = relationship(
+        scopes: Mapped[Sequence["ScopeOrm"]] = relationship(
             secondary="user_scope", lazy="joined"
         )
     __tablename__ = "users"
@@ -39,27 +40,32 @@ class UserOrm:
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    hashed_password: Mapped[bytes|None] = mapped_column(LargeBinary, nullable=True)
 
-    first_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    last_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    first_name: Mapped[str|None] = mapped_column(String(50), nullable=True)
+    last_name: Mapped[str|None] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    oauth_provider: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    oauth_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    oauth_provider: Mapped[str|None] = mapped_column(String(20), nullable=True)
+    oauth_id: Mapped[str|None] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=datetime.now(tz=UTC), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime(timezone=True),
+        default=datetime.now(tz=UTC),
+        onupdate=datetime.now(tz=UTC),
+        nullable=False,
     )
 
     def is_valid_password(self, password: str) -> bool:
-        return checkpw(password.encode(), self.hashed_password.encode() or "")
+        if not self.hashed_password:
+            return False
+        return checkpw(password.encode(), self.hashed_password)
 
     def set_password(self, password: str) -> None:
         salt = gensalt()
         hashed = hashpw(password.encode(), salt)
-        self.hashed_password = hashed.decode()
+        self.hashed_password = hashed

@@ -12,5 +12,5 @@ class TokenOrm:
     refresh_token: Mapped[str] = mapped_column( nullable=False)
     expires_at: Mapped[int] = mapped_column( nullable=False)
     issued_at: Mapped[int] = mapped_column( default=lambda: int(datetime.now().timestamp()))
-    is_blocked_access: Mapped[bool] = mapped_column( default=False)
-    is_full_block: Mapped[bool] = mapped_column( default=False)
+    is_blocked_access: Mapped[bool] = mapped_column(default=False)
+    is_full_block: Mapped[bool] = mapped_column(default=False)

@@ -1,6 +1,15 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
+from uuid import UUID
 
-from pydantic import BaseModel, field_validator, field_serializer
+from pydantic import (
+    BaseModel,
+    field_validator,
+    field_serializer,
+    model_validator,
+    Field,
+    ConfigDict,
+)
 
 if TYPE_CHECKING:
     from backauth.user.model import ScopeOrm
@@ -15,11 +24,11 @@ class UserRegisterSchema(UserLoginSchema):
     username: str
     confirm_password: str
 
-    @field_validator("confirm_password")
-    def password_match(cls, v, values, **kwargs):
-        if v != values["password"]:
+    @model_validator(mode="after")
+    def check_passwords_match(self) -> "UserRegisterSchema":
+        if self.password != self.confirm_password:
             raise ValueError("Passwords do not match")
-        return v
+        return self
 
 
 class UserUpdateSchema(BaseModel):
@@ -29,21 +38,32 @@ class UserUpdateSchema(BaseModel):
     last_name: str | None
 
 
-class UserResponseSchema(BaseModel):
-    id: int
+class UserPayloadSchema(BaseModel):
+    id: UUID = Field(alias="user_id")
     username: str
     email: str
-    first_name: str
-    last_name: str
+    first_name: str | None = None
+    last_name: str | None = None
+    scopes: list[str]
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_serialization_defaults_required=True,
+        populate_by_name=True,
+    )
+
+
+class UserResponseSchema(UserPayloadSchema):
     is_active: bool
     is_superuser: bool
-    scopes: list[str]
-    oauth_provider: str
-    oauth_id: str
-    created_at: str
-    updated_at: str
+    oauth_provider: str | None = None
+    oauth_id: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(
+        from_attributes=True, json_schema_serialization_defaults_required=True
+    )
 
     @field_serializer("scopes", when_used="json")
     def serialize_scopes(self, scopes: list["ScopeOrm"], _info) -> list[str]:

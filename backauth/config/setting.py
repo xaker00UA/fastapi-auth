@@ -23,14 +23,6 @@ class OAuthBase(BaseSettings):
         return self.client_secret
 
 
-class FacebookOAuth(OAuthBase):
-    client_id: str = ""
-    client_secret: str = ""
-
-
-class TelegramOAuth(BaseSettings):
-    bot_token: str = ""
-
 
 class GithubOAuth(OAuthBase):
     client_id: str = ""
@@ -40,7 +32,6 @@ class GithubOAuth(OAuthBase):
 class DiscordOAuth(OAuthBase):
     client_id: str = ""
     client_secret: str = ""
-
 
 class GoogleOAuth(OAuthBase):
     client_id: str = ""
@@ -55,32 +46,25 @@ class TokenSettings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     @property
-    def private_key(self) -> AbstractJWKBase:
+    def private_key(self)  -> AbstractJWKBase:
         if not os.path.exists(self.private_key_path):
-            raise FileNotFoundError(
-                f"Private key file not found: {self.private_key_path}"
-            )
+            raise FileNotFoundError(f"Private key file not found: {self.private_key_path}")
         with open(self.private_key_path, "rb") as f:
-            return jwk_from_pem(f.read())
+            return  jwk_from_pem(f.read())
 
     @property
     def public_key(self) -> AbstractJWKBase:
-        if not os.path.exists(self.private_key_path):
-            raise FileNotFoundError(
-                f"Private key file not found: {self.private_key_path}"
-            )
+        if not os.path.exists(self.public_key_path):
+            raise FileNotFoundError(f"Private key file not found: {self.private_key_path}")
         with open(self.public_key_path, "rb") as f:
-            return jwk_from_pem(f.read())
-
+            return  jwk_from_pem(f.read())
 
 class Config(BaseSettings):
 
-    redirect_uri: str = "http://127.0.0.1:4000/oauth/code"
+    redirect_uri: str
 
     google: GoogleOAuth = GoogleOAuth()
     discord: DiscordOAuth = DiscordOAuth()
-    facebook: FacebookOAuth = FacebookOAuth()
-    telegram: TelegramOAuth = TelegramOAuth()
     github: GithubOAuth = GithubOAuth()
 
     token: TokenSettings = TokenSettings()
@@ -99,4 +83,4 @@ class Config(BaseSettings):
         raise KeyError(f"Invalid or unsupported service name: {key}")
 
 
-config = Config()
+
