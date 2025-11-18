@@ -79,7 +79,9 @@ class UserService:
         username = await self.user_repository.get_by_username(user_register.username)
         if user or username:
             raise EmailOrUsernameExist()
-        user = await self.user_repository.create(user_register.model_dump())
+        user = await self.user_repository.create(
+            user_register.model_dump(exclude={"confirm_password"})
+        )
         logger.info(f"User created: {user}")
         return user
 
