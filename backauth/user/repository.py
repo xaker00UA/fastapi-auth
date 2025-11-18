@@ -3,6 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select, update, delete, Executable, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import class_mapper, selectinload
 
 from backauth.user.model import UserOrm
 
@@ -20,8 +21,7 @@ class UserRepository:
         return result.unique().scalar_one_or_none()
 
     async def get_by_id(self, _id: UUID) -> UserOrm | None:
-        stmt = select(self.model).where(self.model.id == _id)
-        return await self._get_user(stmt)
+        return await self.session.get(self.model, _id)
 
     async def get_by_email(self, email: str) -> UserOrm | None:
         stmt = select(self.model).where(self.model.email == email)
@@ -62,3 +62,12 @@ class UserRepository:
         await self.session.commit()
         await self.session.refresh(user)
         return user
+
+    async def get_by_id_and_full_relationship(self, _id: UUID):
+        relationships = [
+            selectinload(getattr(self.model, rel.key))
+            for rel in class_mapper(self.model).relationships.values()
+        ]
+        stmt = select(self.model).options(*relationships).where(self.model.id == _id)
+        res = await self.session.execute(stmt)
+        return res.unique().scalar_one_or_none()

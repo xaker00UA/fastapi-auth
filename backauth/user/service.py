@@ -53,16 +53,24 @@ class UserService:
             data = user_data.get_orn_dict()
             data["oauth_provider"] = auth_service.service_name
             user_or_username = await self.user_repository.create(data)
-            logger.info(f"User by oauth created: {entity}")
+            logger.info(f"User by oauth created: %s", user_or_username)
+        entity = await self.user_repository.get_by_id_and_full_relationship(
+            user_or_username.id
+        )
+        logger.info(
+            f"User by oauth logged in: %s",
+            user_or_username,
+        )
         return self.token_service.get_token_info(state).get(
             "redirect_url", ""
-        ), await self.token_service.get_token(user_or_username)
+        ), await self.token_service.get_token(entity)
 
     async def login(self, user_login: UserLoginSchema) -> Token:
         user = await self.user_repository.get_by_email(user_login.email)
-        if not user and user.is_valid_password(user_login.password):
+        if user and user.is_valid_password(user_login.password):
             raise InvalidEmailOrPassword()
-        token = await self.token_service.get_token(user)
+        entity = await self.user_repository.get_by_id_and_full_relationship(user.id)  # type: ignore
+        token = await self.token_service.get_token(entity)
         logger.info(f"User logged in: {user}")
         return token
 
@@ -100,7 +108,9 @@ class UserService:
 
     async def get_token_by_refresh(self, refresh_token: str) -> Token:
         subject = await self.token_service.get_info_from_refresh(refresh_token)
-        user = await self.user_repository.get_by_id(subject.subject)
+        user = await self.user_repository.get_by_id_and_full_relationship(
+            subject.subject
+        )
         if not user:
             raise InvalidToken("Invalid refresh token")
         return await self.token_service.create_access_token_by_refresh(
