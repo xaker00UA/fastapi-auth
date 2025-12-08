@@ -4,8 +4,8 @@ from uuid import UUID
 
 from pydantic import (
     BaseModel,
-    field_validator,
     field_serializer,
+    EmailStr,
     model_validator,
     Field,
     ConfigDict,
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class UserLoginSchema(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 
