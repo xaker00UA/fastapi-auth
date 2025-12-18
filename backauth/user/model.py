@@ -27,7 +27,7 @@ class ScopeOrm:
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    description: Mapped[str|None] = mapped_column(String(255), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 class UserOrm:
@@ -40,23 +40,23 @@ class UserOrm:
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    hashed_password: Mapped[bytes|None] = mapped_column(LargeBinary, nullable=True)
+    hashed_password: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
 
-    first_name: Mapped[str|None] = mapped_column(String(50), nullable=True)
-    last_name: Mapped[str|None] = mapped_column(String(50), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    oauth_provider: Mapped[str|None] = mapped_column(String(20), nullable=True)
-    oauth_id: Mapped[str|None] = mapped_column(String(255), nullable=True)
+    oauth_provider: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    oauth_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(tz=UTC), nullable=False
+        DateTime(timezone=True), default=datetime.now, nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.now(tz=UTC),
-        onupdate=datetime.now(tz=UTC),
+        default=datetime.now,
+        onupdate=datetime.now,
         nullable=False,
     )
 
