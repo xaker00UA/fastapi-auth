@@ -67,7 +67,7 @@ class UserService:
 
     async def login(self, user_login: UserLoginSchema) -> Token:
         user = await self.user_repository.get_by_email(user_login.email)
-        if user and user.is_valid_password(user_login.password):
+        if user and not user.is_valid_password(user_login.password):
             raise InvalidEmailOrPassword()
         entity = await self.user_repository.get_by_id_and_full_relationship(user.id)  # type: ignore
         token = await self.token_service.get_token(entity)
