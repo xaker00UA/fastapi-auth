@@ -1,17 +1,14 @@
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.router import login_router, oauth_router
+from backauth.auth.service.auth_service import AuthService
 from backauth.auth.service.token_service import TokenService
 from backauth.config.setting import Config
-from backauth.user.model import UserOrm, ScopeOrm, UserScopeOrm
-from backauth.user.router import users_router
-from backauth.user.service import UserService
-from backauth.user.schema import (
-    UserRegisterSchema,
-    UserUpdateSchema,
-    UserResponseSchema,
-)
-from backauth.auth.service.auth_service import AuthService
 from backauth.error.exception import AuthBackendException
+from backauth.user.model import ScopeOrm, UserOrm, UserScopeOrm
+from backauth.user.router import users_router
+from backauth.user.schema import (UserRegisterSchema, UserResponseSchema,
+                                  UserUpdateSchema)
+from backauth.user.service import UserService
 
 __all__ = (
     "UserOrm",

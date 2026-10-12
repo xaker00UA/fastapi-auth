@@ -2,23 +2,21 @@ import asyncio
 import random
 import string
 import uuid
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from typing import Optional, Type
 
 from jwt import JWT
 from jwt.exceptions import JWTDecodeError as JWTError
-
-from backauth.config.logger import logger
-from backauth.error.exception import InvalidToken
-
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.repository.tokenrepository import TokenRepository
 from backauth.auth.schemas import Token
+from backauth.config.logger import logger
 from backauth.config.setting import Config
+from backauth.error.exception import InvalidToken
 from backauth.user.model import UserOrm
-from redis.asyncio import Redis
 
 jwt_instance = JWT()
 encode = jwt_instance.encode
@@ -98,9 +96,11 @@ class TokenService:
     ) -> Token:
         token_entity = await self.get_info_from_refresh(refresh_token)
         payload = await self.get_payload(user)
-        exp = timedelta(seconds=token_entity.expires_at) - timedelta(
-            seconds=datetime.now(UTC).timestamp()
-        )
+        now_timestamp = datetime.now(UTC).timestamp()
+        if token_entity.expires_at > now_timestamp:
+            exp = timedelta(seconds=token_entity.expires_at - now_timestamp)
+        else:
+            exp = timedelta(seconds=0)  # Expired token
         await self.token_repository.delete(token_entity.id)
         _id = uuid.uuid4()
         access_token = self.create_access_token(payload, jti=_id)
@@ -199,6 +199,9 @@ class TokenService:
 
         await asyncio.gather(*tasks)
         logger.info(f"Loaded {len(tasks)} blocked tokens into Redis")
+
+    async def delete_expired_tokens(self):
+        await self.token_repository.delete_expired_tokens()
 
     @staticmethod
     def generate_random_string(length: int = 128) -> str:

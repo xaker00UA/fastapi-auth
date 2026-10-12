@@ -9,15 +9,15 @@ from backauth.auth.service.auth_service import AuthService
 from backauth.auth.service.token_service import TokenService
 from backauth.config.logger import logger
 from backauth.config.setting import Config
-from backauth.user.model import UserOrm
-from backauth.user.repository import UserRepository
-from backauth.user.schema import UserLoginSchema, UserRegisterSchema, UserUpdateSchema
 from backauth.error.exception import (
     EmailOrUsernameExist,
     InvalidEmailOrPassword,
-    UserNotFound,
     InvalidToken,
+    UserNotFound,
 )
+from backauth.user.model import UserOrm
+from backauth.user.repository import UserRepository
+from backauth.user.schema import UserLoginSchema, UserRegisterSchema, UserUpdateSchema
 
 
 class UserService:

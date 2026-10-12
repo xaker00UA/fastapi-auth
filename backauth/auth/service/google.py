@@ -1,4 +1,5 @@
 from jwt import JWT
+
 from backauth.auth.schemas import GoogleAssessToken, UserGoogle
 from backauth.auth.service.auth_service import AuthService
 

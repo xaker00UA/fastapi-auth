@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import Any, Type
 from uuid import UUID
 
-from sqlalchemy import delete, select, and_
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.auth.model.token import TokenOrm
@@ -68,3 +69,9 @@ class TokenRepository:
         stmt = select(self.model).where(self.model.is_blocked_access == True)
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def delete_expired_tokens(self):
+        stmt = delete(self.model).where(
+            self.model.expires_at <= datetime.now().timestamp()
+        )
+        await self.session.execute(stmt)

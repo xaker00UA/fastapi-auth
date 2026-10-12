@@ -1,18 +1,11 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Sequence
 from uuid import UUID, uuid4
 
-from sqlalchemy import (
-    String,
-    DateTime,
-    Boolean,
-    ForeignKey,
-    UniqueConstraint,
-    LargeBinary,
-)
+from bcrypt import checkpw, gensalt, hashpw
+from sqlalchemy import (Boolean, DateTime, ForeignKey, LargeBinary, String,
+                        UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from bcrypt import hashpw, gensalt, checkpw
 
 
 class UserScopeOrm:

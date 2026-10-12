@@ -2,7 +2,8 @@ from httpx import AsyncClient
 from pydantic.v1.class_validators import Validator
 from pydantic_core import ValidationError
 
-from backauth.auth.schemas import GithubAssessToken, DiscordAssessToken, UserDiscord
+from backauth.auth.schemas import (DiscordAssessToken, GithubAssessToken,
+                                   UserDiscord)
 from backauth.auth.service.auth_service import AuthService
 from backauth.error.exception import DiscordException
 

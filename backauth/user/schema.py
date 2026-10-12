@@ -2,14 +2,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import (
-    BaseModel,
-    field_serializer,
-    EmailStr,
-    model_validator,
-    Field,
-    ConfigDict,
-)
+from pydantic import (BaseModel, ConfigDict, EmailStr, Field, field_serializer,
+                      model_validator)
 
 if TYPE_CHECKING:
     from backauth.user.model import ScopeOrm

@@ -1,7 +1,7 @@
 from typing import Any, Type
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, Executable, or_
+from sqlalchemy import Executable, delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import class_mapper, selectinload
 

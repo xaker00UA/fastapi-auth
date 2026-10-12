@@ -1,11 +1,9 @@
-from typing import Annotated, Type, Any
-from fastapi import APIRouter, Depends, Form
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import status
+from typing import Annotated, Any, Type
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Request
+from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.schemas import Token

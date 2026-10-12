@@ -1,13 +1,14 @@
-from typing import Any, TypeVar, Generic, Type, NoReturn
+from typing import Any, Generic, NoReturn, Type, TypeVar
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from backauth.auth.service import *  # type: ignore
+
 from backauth.auth.model.token import TokenOrm
-from backauth.auth.schemas import UserType, TokenType
+from backauth.auth.schemas import TokenType, UserType
+from backauth.auth.service import *  # type: ignore
 from backauth.auth.service.token_service import TokenService
-from backauth.config.setting import Config
 from backauth.config.logger import logger
+from backauth.config.setting import Config
 
 V = TypeVar("V", bound=TokenType)
 

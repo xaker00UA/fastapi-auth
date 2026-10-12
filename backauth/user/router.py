@@ -1,24 +1,18 @@
-from typing import Annotated, Type, AsyncGenerator, Any, Awaitable, Callable
+from typing import Annotated, Any, AsyncGenerator, Awaitable, Callable, Type
 from uuid import UUID
+
+from fastapi import APIRouter, Body, Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi import status
-from fastapi import APIRouter, Depends, Body
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backauth.auth.model.token import TokenOrm
 from backauth.auth.service.token_service import TokenService
 from backauth.config.setting import Config
 from backauth.user.model import UserOrm
-from backauth.user.schema import (
-    UserRegisterSchema,
-    UserResponseSchema,
-    UserUpdateSchema,
-    UserPayloadSchema,
-)
+from backauth.user.schema import (UserPayloadSchema, UserRegisterSchema,
+                                  UserResponseSchema, UserUpdateSchema)
 from backauth.user.service import UserService
-from fastapi.security import (
-    OAuth2PasswordBearer,
-)
 
 
 def users_router(

@@ -1,6 +1,6 @@
 import os
 
-from jwt import jwk_from_pem, AbstractJWKBase
+from jwt import AbstractJWKBase, jwk_from_pem
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from redis.asyncio import ConnectionPool
 
@@ -23,7 +23,6 @@ class OAuthBase(BaseSettings):
         return self.client_secret
 
 
-
 class GithubOAuth(OAuthBase):
     client_id: str = ""
     client_secret: str = ""
@@ -32,6 +31,7 @@ class GithubOAuth(OAuthBase):
 class DiscordOAuth(OAuthBase):
     client_id: str = ""
     client_secret: str = ""
+
 
 class GoogleOAuth(OAuthBase):
     client_id: str = ""
@@ -46,18 +46,23 @@ class TokenSettings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     @property
-    def private_key(self)  -> AbstractJWKBase:
+    def private_key(self) -> AbstractJWKBase:
         if not os.path.exists(self.private_key_path):
-            raise FileNotFoundError(f"Private key file not found: {self.private_key_path}")
+            raise FileNotFoundError(
+                f"Private key file not found: {self.private_key_path}"
+            )
         with open(self.private_key_path, "rb") as f:
-            return  jwk_from_pem(f.read())
+            return jwk_from_pem(f.read())
 
     @property
     def public_key(self) -> AbstractJWKBase:
         if not os.path.exists(self.public_key_path):
-            raise FileNotFoundError(f"Private key file not found: {self.private_key_path}")
+            raise FileNotFoundError(
+                f"Private key file not found: {self.private_key_path}"
+            )
         with open(self.public_key_path, "rb") as f:
-            return  jwk_from_pem(f.read())
+            return jwk_from_pem(f.read())
+
 
 class Config(BaseSettings):
 
@@ -81,6 +86,3 @@ class Config(BaseSettings):
         if isinstance(attr, OAuthBase):
             return attr
         raise KeyError(f"Invalid or unsupported service name: {key}")
-
-
-
