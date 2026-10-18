@@ -14,6 +14,7 @@ class GoogleAuthService(AuthService[GoogleAssessToken]):
         user = jwt.decode(
             token.id_token,
             key="",
+            access_token=token.access_token,
             options={"verify_signature": False, "verify_aud": False},
         )
         return UserGoogle.model_validate(user)

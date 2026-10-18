@@ -131,4 +131,6 @@ async def test_google_identity_claims_keep_expiry_checks():
     instance = object.__new__(GoogleAuthService)
     expired = jwt.encode({"exp": 1}, "google-test", algorithm="HS256")
     with pytest.raises(JWTError):
-        await instance.get_user(SimpleNamespace(id_token=expired))
+        await instance.get_user(
+            SimpleNamespace(id_token=expired, access_token="google-access-token")
+        )
