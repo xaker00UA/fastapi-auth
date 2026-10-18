@@ -1,10 +1,7 @@
-from jwt import JWT
+from jose import jwt
 
 from backauth.auth.schemas import GoogleAssessToken, UserGoogle
 from backauth.auth.service.auth_service import AuthService
-
-jwt_instance = JWT()
-decode = jwt_instance.decode
 
 
 class GoogleAuthService(AuthService[GoogleAssessToken]):
@@ -12,5 +9,11 @@ class GoogleAuthService(AuthService[GoogleAssessToken]):
     model = GoogleAssessToken
 
     async def get_user(self, token: GoogleAssessToken):
-        user = decode(token.id_token, do_verify=False)
+        # id_token comes directly from Google's token endpoint. Preserve the
+        # previous expiry/nbf checks while reading its externally signed claims.
+        user = jwt.decode(
+            token.id_token,
+            key="",
+            options={"verify_signature": False, "verify_aud": False},
+        )
         return UserGoogle.model_validate(user)

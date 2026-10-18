@@ -5,8 +5,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Optional, Type
 
-from jwt import JWT
-from jwt.exceptions import JWTDecodeError as JWTError
+from jose import JWTError, jwt
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,10 +16,6 @@ from backauth.config.logger import logger
 from backauth.config.setting import Config
 from backauth.error.exception import InvalidToken
 from backauth.user.model import UserOrm
-
-jwt_instance = JWT()
-encode = jwt_instance.encode
-decode = jwt_instance.decode
 
 
 class TokenService:
@@ -66,8 +61,8 @@ class TokenService:
                 "jti": str(jti) or str(uuid.uuid4()),
             }
         )
-        encoded_jwt = encode(
-            to_encode, self.conf.token.private_key, alg=self.conf.token.algorithm
+        encoded_jwt = jwt.encode(
+            to_encode, self.conf.token.private_key, algorithm=self.conf.token.algorithm
         )
         return encoded_jwt
 
@@ -112,9 +107,11 @@ class TokenService:
     async def validate_token(self, token: str) -> bool:
         try:
 
-            payload = decode(
+            payload = jwt.decode(
                 token,
                 self.conf.token.public_key,
+                algorithms=[self.conf.token.algorithm],
+                options={"require_exp": True},
             )
             if await self.is_token_blacklisted(payload.get("jti", "")):
                 return False
@@ -124,10 +121,11 @@ class TokenService:
             return False
 
     def get_token_info(self, token: str) -> dict:
-        payload = decode(
+        payload = jwt.decode(
             token,
             self.conf.token.public_key,
-            do_verify=True,
+            algorithms=[self.conf.token.algorithm],
+            options={"require_exp": True},
         )
         return payload
 
